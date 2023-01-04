@@ -1,0 +1,50 @@
+<div fxLayout="column" style="margin:auto;max-width: 300px">
+  <input #nameInput [value]="animalFormFacade.state.name.select$ | async" (input)="animalFormFacade.state.name.set(nameInput.value)" />
+  
+  <mat-select
+    [value]="animalFormFacade.state.colors.select$ | async"
+    (selectionChange)="animalFormFacade.state.colors.set($event.value)"
+    style="border:1px solid black"
+    multiple
+  >
+    <mat-select-trigger>
+        {{ (animalFormFacade.state.colors.select$ | async)?.join(', ') || '' }}
+    </mat-select-trigger>
+    <mat-option *ngFor="let color of colors" [value]="color">{{ color }}</mat-option>
+  </mat-select>
+  
+  <mat-checkbox [checked]="animalFormFacade.state.hasClaws.select$ | async" (change)="animalFormFacade.state.hasClaws.set(booleanToggle)">Has Claws</mat-checkbox>
+  <mat-checkbox [checked]="animalFormFacade.state.hasHooves.select$ | async" (change)="animalFormFacade.state.hasHooves.set(booleanToggle)">Has Hooves</mat-checkbox>
+
+  <button (click)="animalFormFacade.setNameConflict()">Set Name Conflict</button>
+  <button (click)="animalFormFacade.submit()" [disabled]="!(animalFormFacade.isDirty | async)">Submit</button>
+  <button (click)="animalFacade.removeIds([nameInput.value])">Remove</button>
+  <button (click)="animalFacade.fetchAnimals()">Fetch</button>
+  
+  <ul>
+    <li *ngFor="let animal of animalFacade.getAnimals | async">
+      {{
+        [
+          animal.name,
+          'is',
+          animal.colors.join(', '),
+          'and',
+          animal.hasClaws ? 'has claws' : 'has no claws',
+          'and',
+          animal.hasHooves ? 'has hooves' : 'has no hooves',
+        ].join(' ')
+      }}
+    </li>
+  </ul>
+  
+  <div>
+    <span>First Animal Name:</span>
+    {{ (animalFacade.getFirstAnimal | async)?.name }}
+  </div>
+  
+  <div>
+    <span>All Animal Names:</span>
+    {{ animalFacade.getAnimalString | async }}
+  </div>
+  
+</div>
