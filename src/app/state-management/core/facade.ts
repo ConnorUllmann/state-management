@@ -5,7 +5,7 @@ import { FacadePatchField, facadePatchProperty, FacadeResetField, facadeResetPro
 import { StateSelectorField, StateSelectorProperty, stateSelectorProperty } from "./models/state-selectors.model";
 import { IState, StateModel } from "./models/state.model";
 import { Operator, patch } from "./operators";
-import { addSelectorProperties, behaviorSubjectBySelectorId, ISelectorClass, selectorIdField } from "./selector";
+import { addSelectorProperties, behaviorSubjectBySelectorId, HasSelectorId, ISelectorClass, selectorIdField } from "./selector";
 import { Store } from "./store";
 
 export type IActionClassByName = Record<string, IActionClass<any>> & { store?: never }
@@ -24,7 +24,7 @@ type ToStateModel<StateClass> = StateClass extends Readonly<IState<infer Model>>
     ? Model
     : never;
   
-type SelectOfSelectorFn<SelectorFn> = SelectorFn extends ((...args: any[]) => any) & { [selectorIdField]: string }
+type SelectOfSelectorFn<SelectorFn> = SelectorFn extends ((...args: any[]) => any)
   ? BehaviorSubject<DeepReadonly<ReturnType<SelectorFn>>>
   : never
 
@@ -129,7 +129,7 @@ const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
     {
       configurable: false,
       enumerable: true,
-      get() { return behaviorSubjectBySelectorId[selectors[stateSelectorProperty][selectorIdField] as string] }
+      get() { return behaviorSubjectBySelectorId[(selectors[stateSelectorProperty] as HasSelectorId)[selectorIdField] as string] }
     }
   )
   
@@ -197,7 +197,7 @@ const getStateSettersAndSelectorsHelper = <Model extends StateModel<Model>>(
       {
         configurable: false,
         enumerable: true,
-        get() { return behaviorSubjectBySelectorId[(selectorsValue as StateSelectorProperty<Model>)[stateSelectorProperty][selectorIdField] as string] }
+        get() { return behaviorSubjectBySelectorId[((selectorsValue as StateSelectorProperty<Model>)[stateSelectorProperty] as unknown as HasSelectorId)[selectorIdField] as string] }
       }
     )
 

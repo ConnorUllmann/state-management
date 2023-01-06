@@ -1,6 +1,4 @@
-import { DeepClone } from "app/state-management/core/deep-utils";
 import { createSelector } from "app/state-management/core/selector";
-import { Animal } from "../shared/animal.model";
 import { AnimalState } from "./animal.state";
 
 export class AnimalSelector {
@@ -11,7 +9,7 @@ export class AnimalSelector {
   
   static getFirstAnimal = createSelector(
     AnimalSelector.getAnimals,
-    animals => DeepClone<Animal>(animals[0]!),
+    animals => animals[0],
   );
 
   static getAnimalString = createSelector(

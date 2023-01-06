@@ -6,7 +6,8 @@ export const selectorIdField = '__selectorId' as const
 type IStateSelectable<Model extends StateModel<Model>> = Readonly<Pick<IState<Model>, 'stateId' | 'data$'>>
 
 export type ISelectorClass = { new(): { _?: never } };
-export type SelectorFn<Return> = (((...args: any[]) => Return) & { readonly [selectorIdField]: string })
+export type HasSelectorId = { readonly [selectorIdField]: string }
+export type SelectorFn<Return> = (((...args: any[]) => Return))
 type SelectorFnAndStateReturnTypes<SelectorFnsAndStates extends readonly (SelectorFn<any> | IStateSelectable<any> | BehaviorSubject<any>)[]> = {
   [K in keyof SelectorFnsAndStates]: SelectorFnsAndStates[K] extends SelectorFn<any>
     ? ReturnType<SelectorFnsAndStates[K]>
@@ -30,7 +31,7 @@ const shouldRecalculateSelector = (lastParentSelectorValues: any[] | undefined, 
 let selectorId = 0;
 export const createSelector = <ParentSelectorFns extends readonly (SelectorFn<any> | IStateSelectable<any> | BehaviorSubject<any>)[], U>(
   ...args: [...selectorFns: ParentSelectorFns, fn: (...args: SelectorFnAndStateReturnTypes<ParentSelectorFns>) => U]
-): ((...args: SelectorFnAndStateReturnTypes<ParentSelectorFns>) => U) & { [selectorIdField]: string } => {
+): ((...args: SelectorFnAndStateReturnTypes<ParentSelectorFns>) => U) => {
   const selectorFns = args.slice(0, -1) as unknown as ParentSelectorFns;
   const fn = args[args.length-1] as (...args: SelectorFnAndStateReturnTypes<ParentSelectorFns>) => U;
   if(selectorIdField in fn)
@@ -77,7 +78,7 @@ export function addSelectorProperties<SelectorClass extends ISelectorClass>(obj:
         enumerable: true,
         get() {
           const selectorFn = selectorClass[propertyName] as unknown as SelectorFn<any>;
-          const selectorFnId = selectorFn[selectorIdField];
+          const selectorFnId = (selectorFn as unknown as HasSelectorId)[selectorIdField];
           const behaviorSubject = behaviorSubjectBySelectorId[selectorFnId]
           return behaviorSubject;
         }

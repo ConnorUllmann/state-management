@@ -17,7 +17,7 @@
   <mat-checkbox [checked]="animalFormFacade.state.hasHooves.select$ | async" (change)="animalFormFacade.state.hasHooves.set(booleanToggle)">Has Hooves</mat-checkbox>
 
   <button (click)="animalFormFacade.setNameConflict()">Set Name Conflict</button>
-  <button (click)="animalFormFacade.submit()" [disabled]="!(animalFormFacade.isDirty | async)">Submit</button>
+  <button (click)="animalFormFacade.submit()" [disabled]="!(animalFormFacade.isValid | async)">Submit</button>
   <button (click)="animalFacade.removeIds([nameInput.value])">Remove</button>
   <button (click)="animalFacade.fetchAnimals()">Fetch</button>
   
