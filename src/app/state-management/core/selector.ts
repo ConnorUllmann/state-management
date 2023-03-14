@@ -39,7 +39,7 @@ export const createSelector = <ParentSelectorFns extends readonly (SelectorFn<an
   
   const newSelectorId = (selectorId++).toString()
   Object.defineProperty(fn, selectorIdField, { configurable: false, enumerable: false, writable: false, value: newSelectorId });
-  const parentBehaviorSubjects = selectorFns.map(o => 'stateId' in o ? o.data$ : selectorIdField in o ? behaviorSubjectBySelectorId[o[selectorIdField]]! : o);
+  const parentBehaviorSubjects = selectorFns.map(o => 'stateId' in o ? o.data$ : selectorIdField in o ? behaviorSubjectBySelectorId[o[selectorIdField] as any]! : o);
   combineLatest(parentBehaviorSubjects).subscribe((selectorValues) => {
     if(shouldRecalculateSelector(lastArgumentsRunWithBySelectorId[newSelectorId], selectorValues)) {
       const value = fn(...selectorValues as any);
@@ -53,19 +53,21 @@ export const createSelector = <ParentSelectorFns extends readonly (SelectorFn<an
   return fn as any;
 }
 
+const disallowedSelectorPropertyNames = new Set<string>(['caller', 'callee', 'arguments']);
 const getSelectorPropertyNames = (selectorClass: ISelectorClass) => {
   let propertyNames = new Set<string>();
   let obj = selectorClass;
-  while(obj && obj.constructor !== Object) {
-    const keys = Object.getOwnPropertyNames(selectorClass) as (keyof typeof selectorClass)[];
-    for(const key of keys) {
-      if(selectorClass[key][selectorIdField] !== undefined && typeof selectorClass[key] === 'function')
+  while (obj && obj.constructor !== Object) {
+    const keys = Object.getOwnPropertyNames(obj) as (keyof typeof selectorClass)[];
+    for (const key of keys) {
+      if (disallowedSelectorPropertyNames.has(key)) continue;
+      if (selectorClass[key][selectorIdField] !== undefined && typeof selectorClass[key] === 'function')
         propertyNames.add(key);
     }
     obj = Object.getPrototypeOf(obj);
   }
   return Array.from(propertyNames);
-}
+};
 
 export function addSelectorProperties<SelectorClass extends ISelectorClass>(obj: Record<string, any>, selectorClass: SelectorClass) {
   const propertyNames = getSelectorPropertyNames(selectorClass) as (keyof typeof selectorClass)[];
