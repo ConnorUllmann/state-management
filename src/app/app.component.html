@@ -46,5 +46,26 @@
     <span>All Animal Names:</span>
     {{ animalFacade.getAnimalString | async }}
   </div>
+
+  <input #searchNameInput [value]="searchName$ | async" (input)="searchName$.next(searchNameInput.value)" />
+  
+  
+  <div>
+    <span>Searched Animal Name:</span>
+    <span *ngIf="searchedAnimal$ | async as searchedAnimal">    {{
+      searchedAnimal ?
+      [
+        searchedAnimal.name,
+        'is',
+        searchedAnimal.colors.join(', '),
+        'and',
+        searchedAnimal.hasClaws ? 'has claws' : 'has no claws',
+        'and',
+        searchedAnimal.hasHooves ? 'has hooves' : 'has no hooves',
+      ].join(' ')
+      : 'Not Found'
+    }}</span>
+
+  </div>
   
 </div>

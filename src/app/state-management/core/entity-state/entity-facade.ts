@@ -8,10 +8,10 @@ import { Store } from "../store";
 import { getIdField, IEntityState } from "./entity-state.model";
 
 
-export type IEntityStateClassByName<Entity extends StateModel<Entity>> = Record<string, Readonly<IEntityState<Entity>>> & { store?: never }
+export type IEntityStateClassByName<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = Record<string, Readonly<IEntityState<Entity, IdsUnion>>> & { store?: never }
 
-type ToEntity<StateClass extends Readonly<IEntityState<StateModel<unknown>>>> = StateClass extends Readonly<IEntityState<infer Entity>> ? DeepReadonly<Entity> : never
-export type ToStateClass<StateClass> = StateClass extends Readonly<IEntityState<infer Entity>> ? Entity extends StateModel<Entity> ? StateClass : never : never
+type ToEntity<StateClass extends Readonly<IEntityState<StateModel<unknown>, never>>> = StateClass extends Readonly<IEntityState<infer Entity, any>> ? DeepReadonly<Entity> : never
+export type ToStateClass<StateClass> = StateClass extends Readonly<IEntityState<infer Entity, any>> ? Entity extends StateModel<Entity> ? StateClass : never : never
 
 const addEntitiesField = 'addEntities' as const;
 const removeEntitiesField = 'removeEntities' as const;
@@ -19,7 +19,7 @@ const removeIdsField = 'removeIds' as const;
 const patchEntityField = 'patchEntity' as const;
 export type IEntityFacade<
   ActionClasses extends IActionClassByName,
-  StateClass extends Readonly<IEntityState<StateModel<unknown>>>,
+  StateClass extends Readonly<IEntityState<StateModel<unknown>, never>>,
   SelectorClasses extends ISelectorClass[],
 > = 
   IFacade<ActionClasses, { state: StateClass }, SelectorClasses> & {
@@ -27,6 +27,7 @@ export type IEntityFacade<
     removeEntities: (entities: ToEntity<StateClass>[]) => Observable<void>
     removeIds: (ids: string[]) => Observable<void>
     patchEntity: (entityId: string, patch: Patch<ToEntity<StateClass>>) => Observable<void>
+    getId: StateClass['getId']
   }
 
 export function EntityFacade<
@@ -70,6 +71,8 @@ export function EntityFacade<
   obj[patchEntityField] = (entityId: string, patchObj: Patch<ToEntity<typeof state>>) => {
     return store.dispatch(state.operatorAction, patch({ map: patch({ [entityId]: patch(patchObj) }) }) as any)
   }
+
+  obj[getIdField] = (entity: any) => state.getId(entity);
 
   return obj;
 }
