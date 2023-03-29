@@ -158,8 +158,6 @@ const getStateSettersAndSelectorsHelper = <Model extends StateModel<Model>>(
   pathSoFar: string[]
 ) => {
   for(const key in initialData) {
-    if(!(key in selectors))
-      throw new Error(`No selector found for property "${key}"`)
     
     const initialDataValue = initialData[key as keyof typeof initialData];
     const selectorsValue = selectors[key as keyof typeof selectors];

@@ -1,37 +1,31 @@
-import { StateSelectorField, StateSelectorNode, stateSelectorProperty } from "./models/state-selectors.model";
+import { StateSelectorField, stateSelectorProperty } from "./models/state-selectors.model";
 import { IState, StateModel } from "./models/state.model";
-import { createSelector } from "./selector";
-
-const addSelectProperty = (obj: any, selectorFn: any) => Object.defineProperty(
-    obj,
-    stateSelectorProperty,
-    {
-      configurable: false,
-      enumerable: true,
-      writable: false,
-      value: selectorFn,
-    }
-  )
+import { createSelector, ISelectorParent, SelectorFn } from "./selector";
 
 export function createStateSelectors<Model extends StateModel<Model>>(state: Readonly<Pick<IState<Model>, 'initialData' | 'data$'>>): StateSelectorField<Model> {
-  const obj = {};
-  const selectorFn = createSelector(state.data$, state => state);
-  addSelectProperty(obj, selectorFn);
-  recurse(obj, state.initialData);
-  return obj as StateSelectorField<Model>;
+  return createStateSelectorsInternal(state.data$, null);
 }
 
-function recurse<Parent>(obj: any, objToTraverse: Parent) {
-  for(const key in objToTraverse) {
-    const prop = objToTraverse[key];
+export function createStateSelectorsInternal<Model extends StateModel<Model>>(parent: ISelectorParent<Model>, key: keyof Model | null): StateSelectorField<Model> {
+  let selectorFn: SelectorFn<any> | null = null;
+  let fields: Partial<Record<keyof Model, StateSelectorField<Model>>> = {};
 
-    obj[key] = {};
-
-    const selectorFn = createSelector(obj.selector, value => value[key]);
-    addSelectProperty(obj[key], selectorFn);
-    
-    if(!Array.isArray(prop) && typeof prop === 'object')
-      recurse(obj[key], prop);
-  }
-  return obj as StateSelectorNode<Parent>;
+  const obj = new Proxy(
+    {} as unknown as StateSelectorField<Model>,
+    {
+      get(_target: any, prop: keyof Model) {
+        if(!selectorFn)
+          selectorFn = createSelector(parent, key == null ? obj => obj : obj => obj[key]);
+        
+        if(prop === stateSelectorProperty)
+          return selectorFn;
+        else {
+          if(!(prop in fields))
+            fields[prop] = createStateSelectorsInternal(selectorFn, prop);
+          return fields[prop];
+        }
+      }
+    } as ProxyHandler<StateSelectorField<Model>>
+  );
+  return obj as StateSelectorField<Model>;
 }
