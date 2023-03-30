@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable } from "rxjs";
 import { DeepReadonly } from "../deep-utils";
 import { Operator, Patch } from "../operators";
 import { IndexSignatureKey } from "../utility-types/index-signature-key";
-import { NonOptionalKeys } from "../utility-types/is-key-optional";
+import { OptionalByKey } from "../utility-types/is-key-optional";
 
 export const facadeSetProperty = 'set' as const;
 type FacadeSetProperty<Model> = { readonly set: (value: Model | Operator<Model>) => Observable<void> }
@@ -14,7 +14,7 @@ type FacadeSetNode<Model, Keys extends PropertyKey[] = []> = FacadeSetProperty<M
   : object);
 
 export type FacadeSetField<Model, Keys extends PropertyKey[] = []> = FacadeSetProperty<Model> & Readonly<{
-  [Key in NonOptionalKeys<NonNullable<Model>>]: FacadeSetNode<NonNullable<Model>[Key], [...Keys, Key]>
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeSetNode<NonNullable<Model>[Key], [...Keys, Key]> : never
 }>
 
 
@@ -29,7 +29,7 @@ type FacadeResetNode<Model, Keys extends PropertyKey[] = []> = FacadeResetProper
   : object);
 
 export type FacadeResetField<Model, Keys extends PropertyKey[] = []> = FacadeResetProperty & Readonly<{
-  [Key in NonOptionalKeys<NonNullable<Model>>]: FacadeResetNode<NonNullable<Model>[Key], [...Keys, Key]>
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeResetNode<NonNullable<Model>[Key], [...Keys, Key]> : never
 }>
 
 
@@ -44,7 +44,7 @@ type FacadePatchNode<Model, Keys extends PropertyKey[] = []> = (NonNullable<Mode
   : object);
 
 export type FacadePatchField<Model, Keys extends PropertyKey[] = []> = FacadePatchProperty<Model> & Readonly<{
-  [Key in NonOptionalKeys<NonNullable<Model>>]: FacadePatchNode<NonNullable<Model>[Key], [...Keys, Key]>
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadePatchNode<NonNullable<Model>[Key], [...Keys, Key]> : never
 }>
 
 
@@ -59,7 +59,7 @@ type FacadeDeleteNode<Model, Keys extends PropertyKey[] = []> = (NonNullable<Mod
   : object);
 
 export type FacadeDeleteField<Model, Keys extends PropertyKey[] = []> = FacadeDeleteProperty<Model> & Readonly<{
-  [Key in NonOptionalKeys<NonNullable<Model>>]: FacadeDeleteNode<NonNullable<Model>[Key], [...Keys, Key]>
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeDeleteNode<NonNullable<Model>[Key], [...Keys, Key]> : never
 }>
 
 
@@ -74,5 +74,5 @@ type FacadeSelectNode<Model, Keys extends PropertyKey[] = []> = FacadeSelectProp
   : object);
 
 export type FacadeSelectField<Model, Keys extends PropertyKey[] = []> = FacadeSelectProperty<Model> & Readonly<{
-  [Key in NonOptionalKeys<NonNullable<Model>>]: FacadeSelectNode<NonNullable<Model>[Key], [...Keys, Key]>
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeSelectNode<NonNullable<Model>[Key], [...Keys, Key]> : never
 }>
