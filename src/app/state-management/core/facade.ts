@@ -97,123 +97,48 @@ const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
   getStore: () => Store | null,
   initialData: DeepReadonly<Model>,
   operatorAction: IActionClass<{ value: Operator<Model> }>,
-  selectors: DeepReadonly<StateSelectorField<Model>>
-) => {
-  const node = {};
-
-  Object.defineProperty(
-    node,
-    facadeSetProperty,
-    {
-      configurable: false,
-      enumerable: true,
-      writable: false,
-      value: (value: any) => dispatchOperation(getStore, getSetOperation([], value), operatorAction)
-    }
-  )
-
-  Object.defineProperty(
-    node,
-    facadeResetProperty,
-    {
-      configurable: false,
-      enumerable: true,
-      writable: false,
-      value: () => (node as any)[facadeSetProperty](initialData as any)
-    }
-  )
-
-  Object.defineProperty(
-    node,
-    facadeSelectProperty,
-    {
-      configurable: false,
-      enumerable: true,
-      get() { return behaviorSubjectBySelectorId[(selectors[stateSelectorProperty] as HasSelectorId)[selectorIdField] as string] }
-    }
-  )
-  
-  getStateSettersAndSelectorsHelper(node, getStore, initialData, operatorAction, selectors, []);
-
-  Object.defineProperty(
-    node,
-    facadePatchProperty,
-    {
-      configurable: false,
-      enumerable: true,
-      writable: false,
-      value: (patch: any) => dispatchOperation(getStore, getPatchOperation([], patch), operatorAction)
-    }
-  )
-
-  return node;
-}
-
-const getStateSettersAndSelectorsHelper = <Model extends StateModel<Model>>(
-  obj: any,
-  getStore: () => Store | null,
-  initialData: DeepReadonly<Model>,
-  operatorAction: IActionClass<{ value: Operator<Model> }>,
   selectors: DeepReadonly<StateSelectorField<Model>>,
-  pathSoFar: string[]
+  path: string[] = [],
 ) => {
-  for(const key in initialData) {
-    
-    const initialDataValue = initialData[key as keyof typeof initialData];
-    const selectorsValue = selectors[key as keyof typeof selectors];
-
-    const isLeafNode = Array.isArray(initialDataValue) || typeof initialDataValue !== 'object';
-
-    const pathNext = [...pathSoFar, key];
-    const node = obj[key] = {}
-
-    Object.defineProperty(
-      node,
-      facadeSetProperty,
-      {
-        configurable: false,
-        enumerable: true,
-        writable: false,
-        value: (value: any) => dispatchOperation(getStore, getSetOperation(pathNext, value), operatorAction)
-      }
-    )
-
-    Object.defineProperty(
-      node,
-      facadeResetProperty,
-      {
-        configurable: false,
-        enumerable: true,
-        writable: false,
-        value: () => (node as any)[facadeSetProperty](initialDataValue as any)
-      }
-    )
-
-    Object.defineProperty(
-      node,
-      facadeSelectProperty,
-      {
-        configurable: false,
-        enumerable: true,
-        get() { return behaviorSubjectBySelectorId[((selectorsValue as StateSelectorProperty<Model>)[stateSelectorProperty] as unknown as HasSelectorId)[selectorIdField] as string] }
-      }
-    )
-
-    if(!isLeafNode) {
-      getStateSettersAndSelectorsHelper(node, getStore, initialDataValue as any, operatorAction, selectorsValue as any, pathNext);
-
-      Object.defineProperty(
-        node,
-        facadePatchProperty,
-        {
-          configurable: false,
-          enumerable: true,
-          writable: false,
-          value: (patch: any) => dispatchOperation(getStore, getPatchOperation(pathNext, patch), operatorAction)
-        }
-      )
+    const getSelectorsValue = () => {
+      let selectorsValue: any = selectors;
+      for(const key of path)
+        selectorsValue = selectorsValue[key];
+      return selectorsValue;
     }
-  }
+
+    const getInitialData = () => {
+      let initialDataValue: any = initialData;
+      for(const key of path)
+        initialDataValue = initialDataValue[key];
+      return initialDataValue;
+    }
+
+    let facadeSet: Record<PropertyKey, any> = {};
+    let facadeReset: Record<PropertyKey, any> = {};
+    let facadeSelect: Record<PropertyKey, any> = {};
+    let facadePatch: Record<PropertyKey, any> = {};
+    let fields: Record<PropertyKey, any> = {};
+    const node: any = new Proxy(
+      {} as unknown as any,
+      {
+        get(_target: any, prop: string) {
+          switch(prop) {
+            case facadeSetProperty:
+              return facadeSet[prop] ??= (value: any) => dispatchOperation(getStore, getSetOperation(path, value), operatorAction)
+            case facadeResetProperty:
+              return facadeReset[prop] ??= () => node[facadeSetProperty](getInitialData())
+            case facadeSelectProperty:
+              return facadeSelect[prop] ??= behaviorSubjectBySelectorId[((getSelectorsValue() as StateSelectorProperty<Model>)[stateSelectorProperty] as unknown as HasSelectorId)[selectorIdField] as string]
+            case facadePatchProperty:
+              return facadePatch[prop] ??= (patch: any) => dispatchOperation(getStore, getPatchOperation(path, patch), operatorAction)
+            default:
+              return fields[prop] ??= getStateSettersAndSelectors(getStore, initialData as any, operatorAction, getSelectorsValue(), [...path, prop]);
+          }
+        }
+      } as ProxyHandler<any>
+    )
+    return node;
 }
 
 export function Facade<

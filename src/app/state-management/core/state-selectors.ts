@@ -2,7 +2,7 @@ import { StateSelectorField, stateSelectorProperty } from "./models/state-select
 import { IState, StateModel } from "./models/state.model";
 import { createSelector, ISelectorParent, SelectorFn } from "./selector";
 
-export function createStateSelectors<Model extends StateModel<Model>>(state: Readonly<Pick<IState<Model>, 'initialData' | 'data$'>>): StateSelectorField<Model> {
+export function createStateSelectors<Model extends StateModel<Model>>(state: Readonly<Pick<IState<Model>, 'data$'>>): StateSelectorField<Model> {
   return createStateSelectorsInternal(state.data$, null);
 }
 
