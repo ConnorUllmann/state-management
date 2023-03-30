@@ -5,7 +5,7 @@ import { IActionClass } from "./action.model";
 import { IListener } from "./listener.model";
 import { StateSelectorField } from "./state-selectors.model";
 
-export type StateModel<T> = { [P in keyof T]: T[P] };//{ [P in keyof T]-?: StateModel<Exclude<T[P], undefined | ((...args: any) => any)>> };
+export type StateModel<T> = { [P in keyof T]: StateModel<Exclude<T[P], ((...args: any) => any)>> };
 
 export type IState<Model extends StateModel<Model>> = {
   stateId: string
