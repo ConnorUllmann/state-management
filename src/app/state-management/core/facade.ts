@@ -1,10 +1,10 @@
 import { BehaviorSubject, Observable, of } from "rxjs";
 import { DeepReadonly } from "./deep-utils";
 import { IActionClass } from "./models/action.model";
-import { FacadePatchField, facadePatchProperty, FacadeResetField, facadeResetProperty, FacadeSelectField, facadeSelectProperty, FacadeSetField, facadeSetProperty } from "./models/facade.model";
+import { FacadeDeleteField, facadeDeleteProperty, FacadePatchField, facadePatchProperty, FacadeResetField, facadeResetProperty, FacadeSelectField, facadeSelectProperty, FacadeSetField, facadeSetProperty } from "./models/facade.model";
 import { StateSelectorField, StateSelectorProperty, stateSelectorProperty } from "./models/state-selectors.model";
 import { IState, StateModel } from "./models/state.model";
-import { Operator, patch } from "./operators";
+import { DeleteProperty, Operator, patch } from "./operators";
 import { addSelectorProperties, behaviorSubjectBySelectorId, HasSelectorId, ISelectorClass, selectorIdField } from "./selector";
 import { Store } from "./store";
 
@@ -17,7 +17,7 @@ type OmitNever<T> = Pick<T, Values<{
     [Prop in keyof T]: [T[Prop]] extends [never] ? never : Prop
 }>>
 
-type StateProperty<Model> = FacadeSelectField<Model> & FacadeSetField<Model> & FacadeResetField<Model> & FacadePatchField<Model>
+type StateProperty<Model> = FacadeSelectField<Model> & FacadeSetField<Model> & FacadeResetField<Model> & FacadePatchField<Model> & FacadeDeleteField<Model>
 type ToStateModel<StateClass> = StateClass extends Readonly<IState<infer Model>>
   ? Model
   : StateClass extends Readonly<IState<StateModel<infer Model>>>
@@ -77,6 +77,16 @@ const getPatchOperation = (path: string[], value: any) => {
   return operator;
 }
 
+const getDeleteOperation = (path: string[], keys: any[]) => {
+  let operator: Operator<any> = patch(keys.reduce((acc, key) => {
+    acc[key] = DeleteProperty;
+    return acc;
+  }, {}));
+  for(let i = path.length-1; i >= 0; i--)
+    operator = patch({ [path[i]!]: operator });
+  return operator;
+}
+
 const dispatchOperation = <Model>(
   getStore: () => Store | null,
   operator: Operator<Model> | null,
@@ -118,6 +128,7 @@ const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
     let facadeReset: Record<PropertyKey, any> = {};
     let facadeSelect: Record<PropertyKey, any> = {};
     let facadePatch: Record<PropertyKey, any> = {};
+    let facadeDelete: Record<PropertyKey, any> = {};
     let fields: Record<PropertyKey, any> = {};
     const node: any = new Proxy(
       {} as unknown as any,
@@ -132,6 +143,8 @@ const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
               return facadeSelect[prop] ??= behaviorSubjectBySelectorId[((getSelectorsValue() as StateSelectorProperty<Model>)[stateSelectorProperty] as unknown as HasSelectorId)[selectorIdField] as string]
             case facadePatchProperty:
               return facadePatch[prop] ??= (patch: any) => dispatchOperation(getStore, getPatchOperation(path, patch), operatorAction)
+            case facadeDeleteProperty:
+              return facadeDelete[prop] ??= (...keys: any[]) => dispatchOperation(getStore, getDeleteOperation(path, keys), operatorAction)
             default:
               return fields[prop] ??= getStateSettersAndSelectors(getStore, initialData as any, operatorAction, getSelectorsValue(), [...path, prop]);
           }

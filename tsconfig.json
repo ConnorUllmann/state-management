@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "exactOptionalPropertyTypes": true,
     "strictNullChecks": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,

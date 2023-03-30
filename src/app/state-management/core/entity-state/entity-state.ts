@@ -11,7 +11,7 @@ export function Entity<Entity extends StateModel<Entity>>() {
     
       const getFieldId = (entity: Entity, entityIdField: IdProperty<Entity>): string => {
         const result = entity[entityIdField];
-        return typeof result === 'string' ? result : result.toString();
+        return typeof result === 'string' ? result : result?.toString() ?? '';
       }
     
       Object.defineProperty(

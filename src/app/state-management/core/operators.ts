@@ -1,7 +1,16 @@
 import { DeepClone, DeepReadonly } from "./deep-utils";
+import { IsKeyOptional } from "./utility-types/is-key-optional";
+
+export const DeleteProperty = Symbol();
 
 export type Operator<Model> = (state: Model) => Model
-export type Patch<Model> = { [K in keyof Model]?: Model[K] | Operator<Model[K]> }
+
+
+type PatchWithOptionalProps<Model> = { [K in keyof Model]?: (IsKeyOptional<Model, K> extends true ? typeof DeleteProperty : never) | Model[K] | Operator<Model[K]> }
+// check each property and if the property on the model isn't able to be undefined, don't let the patch value be undefined (even if the property is optional!)
+export type Patch<Model> = PatchWithOptionalProps<Model> extends infer T ? { [K in keyof T]: K extends keyof Model ? undefined extends Model[K] ? T[K] : Exclude<T[K], undefined> : T[K] } : never;
+
+
 type Fn = (...args: any[]) => any;
 type PatchValues<Model> = { readonly [K in keyof Model]?: Model[K] extends Fn ? ReturnType<Model[K]> : Model[K] }
 
@@ -11,7 +20,7 @@ export const patch = <Model>(patch: Patch<Model> | DeepReadonly<Patch<Model>>): 
   const fn = (state: PatchValues<Model>): Model => {
     let result: Record<string, any> | null = null;
     for(const key in patch) {
-      const newValueTemp = patch[key as keyof Patch<Model>];
+      const newValueTemp = patch[key as keyof typeof patch];
       const oldValue = state[key as keyof typeof state];
       const newValue = isOperator(newValueTemp) ? newValueTemp(oldValue) : newValueTemp;
 
@@ -21,9 +30,7 @@ export const patch = <Model>(patch: Patch<Model> | DeepReadonly<Patch<Model>>): 
       if(!result)
         result = { ...state };
       
-      // if an undefined value is sent through, delete the key it was sent under
-      // this is possible because undefineds can't be stored in state, so this is the only meaning
-      if(newValue === undefined)
+      if(newValue === DeleteProperty)
         delete result[key];
       else 
         result[key] = newValue;
