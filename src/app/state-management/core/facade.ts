@@ -146,7 +146,7 @@ const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
             case facadeDeleteProperty:
               return facadeDelete[prop] ??= (...keys: any[]) => dispatchOperation(getStore, getDeleteOperation(path, keys), operatorAction)
             default:
-              return fields[prop] ??= getStateSettersAndSelectors(getStore, initialData as any, operatorAction, getSelectorsValue(), [...path, prop]);
+              return fields[prop] ??= getStateSettersAndSelectors(getStore, initialData as any, operatorAction, selectors as any, [...path, prop]);
           }
         }
       } as ProxyHandler<any>
