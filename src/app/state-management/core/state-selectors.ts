@@ -1,9 +1,10 @@
+import { BehaviorSubject } from "rxjs";
 import { StateSelectorField, stateSelectorProperty } from "./models/state-selectors.model";
-import { IState, StateModel } from "./models/state.model";
+import { StateModel } from "./models/state.model";
 import { createSelector, ISelectorParent, SelectorFn } from "./selector";
 
-export function createStateSelectors<Model extends StateModel<Model>>(state: Readonly<Pick<IState<Model>, 'data$'>>): StateSelectorField<Model> {
-  return createStateSelectorsInternal(state.data$, null);
+export function createStateSelectors<Model extends StateModel<Model>>(parent: BehaviorSubject<Model>): StateSelectorField<Model> {
+  return createStateSelectorsInternal(parent, null);
 }
 
 export function createStateSelectorsInternal<Model extends StateModel<Model>>(parent: ISelectorParent<Model>, key: keyof Model | null): StateSelectorField<Model> {

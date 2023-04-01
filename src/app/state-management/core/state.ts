@@ -9,12 +9,14 @@ export function State<Model extends StateModel<Model>>(stateId: string, initialD
   initialData = DeepClone<DeepReadonly<Model>>(initialData)
   const data$ = new BehaviorSubject(DeepClone(initialData));
 
+  const selectors = createStateSelectors(data$);
+
   const set = (value: Model): void => {
-    if(obj.data$.value !== value && !DeepEquals(obj.data$.value, value))
-      obj.data$.next(value);
+    if(state.data$.value !== value && !DeepEquals(state.data$.value, value))
+      state.data$.next(value);
   }
 
-  const applyOperator = (operator: Model | Operator<Model>): Model => isOperator<Model>(operator) ? operator(obj.data$.value) : operator;
+  const applyOperator = (operator: Model | Operator<Model>): Model => isOperator<Model>(operator) ? operator(state.data$.value) : operator;
 
   const operatorAction = class {
     static readonly actionId = `[${stateId}] SetState`
@@ -22,21 +24,15 @@ export function State<Model extends StateModel<Model>>(stateId: string, initialD
   }
 
   const operatorListener: IListener<InstanceType<typeof operatorAction>> = ({ value }) => set(applyOperator(value))
-
-  const baseState = {
+  
+  const state: Readonly<IState<Model>> = {
     stateId,
     initialData,
     operatorAction,
     operatorListener,
     data$,
-  }
-
-  const selectors = createStateSelectors(baseState);
-  
-  const obj: Readonly<IState<Model>> = {
-    ...baseState,
     selectors,
   }
 
-  return obj;
+  return state;
 }
