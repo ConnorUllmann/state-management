@@ -1,4 +1,4 @@
-<div fxLayout="column" style="margin:auto;max-width: 300px">
+<div class="container">
   <input #nameInput [value]="animalFormFacade.state.name.select$ | async" (input)="animalFormFacade.state.name.set(nameInput.value)" />
   
   <mat-select

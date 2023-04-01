@@ -1,4 +1,4 @@
-import { State } from "app/state-management/core/state";
+import { State } from "src/app/state-management/core/state";
 import { AnimalFormStateModel } from "./animal-form-state.model";
 
 export const AnimalFormState = State<AnimalFormStateModel>(

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { FacadeClass } from "app/state-management/angular/facade-class";
+import { FacadeClass } from "src/app/state-management/angular/facade-class";
 import { AnimalFormSetNameConflict, AnimalFormSubmit } from "./animal-form.actions";
 import { AnimalFormSelector } from "./animal-form.selector";
 import { AnimalFormState } from "./animal-form.state";

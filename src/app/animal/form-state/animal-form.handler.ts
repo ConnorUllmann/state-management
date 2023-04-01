@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Store } from "app/state-management/core/store";
+import { Store } from "src/app/state-management/core/store";
 import { AnimalFacade } from "../entity-state/animal.facade";
 import { AnimalFormSetNameConflict, AnimalFormSubmit } from "./animal-form.actions";
 import { AnimalFormFacade } from "./animal-form.facade";

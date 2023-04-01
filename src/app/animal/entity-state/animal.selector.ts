@@ -1,4 +1,4 @@
-import { createSelector } from "app/state-management/core/selector";
+import { createSelector } from "src/app/state-management/core/selector";
 import { AnimalState } from "./animal.state";
 
 export class AnimalSelector {

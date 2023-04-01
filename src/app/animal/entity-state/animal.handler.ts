@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
-import { Store } from "app/state-management/core/store";
 import { flatMap } from "rxjs/operators";
+import { Store } from "src/app/state-management/core/store";
 import { AnimalClient } from "../shared/animal.client";
 import { FetchAnimals } from "./animal.actions";
 import { AnimalFacade } from "./animal.facade";
