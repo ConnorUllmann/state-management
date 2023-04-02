@@ -32,11 +32,11 @@ export type IFacade<ActionClasses extends IActionClassByName, StateClasses exten
   [K in keyof ActionClasses]: (...args: ConstructorParameters<ActionClasses[K]>) => Observable<void>
 } & {
   [K in keyof StateClasses]: StateProperty<ToStateModel<StateClasses[K]>>
-} & {
+} & (SelectorClasses extends [] ? unknown : {
   [SelectorClassIndex in keyof SelectorClasses]: SelectorClasses[SelectorClassIndex] extends infer SelectorClass
     ? OmitNever<Readonly<{ [SelectorFunctionName in keyof SelectorClass]: SelectOfSelectorFn<SelectorClass[SelectorFunctionName]> }>>
     : never
-}[number], 'store'> & { store: Store | null }
+}[number]), 'store'> & { store: Store | null }
 
 const addActionPropertes = <ActionClasses extends IActionClassByName>(getStore: () => Store | null, obj: Record<string, any>, actionClasses: ActionClasses) => {  
   for(const propertyName in actionClasses) {

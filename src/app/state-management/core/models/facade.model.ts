@@ -10,11 +10,11 @@ type FacadeSetProperty<Model> = { readonly set: (value: Model | Operator<Model>)
 type FacadeSetNode<Model, Keys extends PropertyKey[] = []> = FacadeSetProperty<Model> & (NonNullable<Model> extends readonly any[]
   ? object
   : NonNullable<Model> extends object
-  ? Readonly<{ [Key in keyof NonNullable<Model>]: FacadeSetNode<NonNullable<Model>[Key], [...Keys, Key]> }>
+  ? Readonly<{ [Key in keyof NonNullable<Model>]: Key extends keyof Model ? FacadeSetNode<Model[Key], [...Keys, Key]> : never }>
   : object);
 
 export type FacadeSetField<Model, Keys extends PropertyKey[] = []> = FacadeSetProperty<Model> & Readonly<{
-  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeSetNode<NonNullable<Model>[Key], [...Keys, Key]> : never
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? Key extends keyof Model ? FacadeSetNode<Model[Key], [...Keys, Key]> : never : never
 }>
 
 
@@ -25,11 +25,11 @@ type FacadeResetProperty = { readonly reset: () => Observable<void> }
 type FacadeResetNode<Model, Keys extends PropertyKey[] = []> = FacadeResetProperty & (NonNullable<Model> extends readonly any[]
   ? object
   : NonNullable<Model> extends object
-  ? Readonly<{ [Key in keyof NonNullable<Model>]: FacadeResetNode<NonNullable<Model>[Key], [...Keys, Key]> }>
+  ? Readonly<{ [Key in keyof NonNullable<Model>]: Key extends keyof Model ? FacadeResetNode<Model[Key], [...Keys, Key]> : never }>
   : object);
 
 export type FacadeResetField<Model, Keys extends PropertyKey[] = []> = FacadeResetProperty & Readonly<{
-  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeResetNode<NonNullable<Model>[Key], [...Keys, Key]> : never
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? Key extends keyof Model ? FacadeResetNode<Model[Key], [...Keys, Key]> : never : never
 }>
 
 
@@ -40,11 +40,11 @@ type FacadePatchProperty<Model> = { readonly patch: (value: DeepReadonly<Patch<M
 type FacadePatchNode<Model, Keys extends PropertyKey[] = []> = (NonNullable<Model> extends readonly any[]
   ? object
   : NonNullable<Model> extends object
-  ? FacadePatchProperty<Model> & Readonly<{ [Key in keyof NonNullable<Model>]: FacadePatchNode<NonNullable<Model>[Key], [...Keys, Key]> }>
+  ? FacadePatchProperty<Model> & Readonly<{ [Key in keyof NonNullable<Model>]: Key extends keyof Model ? FacadePatchNode<Model[Key], [...Keys, Key]> : never }>
   : object);
 
 export type FacadePatchField<Model, Keys extends PropertyKey[] = []> = FacadePatchProperty<Model> & Readonly<{
-  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadePatchNode<NonNullable<Model>[Key], [...Keys, Key]> : never
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? Key extends keyof Model ? FacadePatchNode<Model[Key], [...Keys, Key]> : never : never
 }>
 
 
@@ -55,11 +55,11 @@ type FacadeDeleteProperty<Model> = IndexSignatureKey<Model> extends never ? unkn
 type FacadeDeleteNode<Model, Keys extends PropertyKey[] = []> = (NonNullable<Model> extends readonly any[]
   ? object
   : NonNullable<Model> extends object
-  ? FacadeDeleteProperty<Model> & Readonly<{ [Key in keyof NonNullable<Model>]: FacadeDeleteNode<NonNullable<Model>[Key], [...Keys, Key]> }>
+  ? FacadeDeleteProperty<Model> & Readonly<{ [Key in keyof NonNullable<Model>]: Key extends keyof Model ? FacadeDeleteNode<Model[Key], [...Keys, Key]> : never }>
   : object);
 
 export type FacadeDeleteField<Model, Keys extends PropertyKey[] = []> = FacadeDeleteProperty<Model> & Readonly<{
-  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeDeleteNode<NonNullable<Model>[Key], [...Keys, Key]> : never
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? Key extends keyof Model ? FacadeDeleteNode<Model[Key], [...Keys, Key]> : never : never
 }>
 
 
@@ -70,9 +70,9 @@ type FacadeSelectProperty<Model> = { readonly select$: BehaviorSubject<DeepReado
 type FacadeSelectNode<Model, Keys extends PropertyKey[] = []> = FacadeSelectProperty<Model> & (NonNullable<Model> extends readonly any[]
   ? object
   : NonNullable<Model> extends object
-  ? Readonly<{ [Key in keyof NonNullable<Model>]: FacadeSelectNode<NonNullable<Model>[Key], [...Keys, Key]> }>
+  ? Readonly<{ [Key in keyof NonNullable<Model>]: Key extends keyof Model ? FacadeSelectNode<Model[Key], [...Keys, Key]> : never }>
   : object);
 
 export type FacadeSelectField<Model, Keys extends PropertyKey[] = []> = FacadeSelectProperty<Model> & Readonly<{
-  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? FacadeSelectNode<NonNullable<Model>[Key], [...Keys, Key]> : never
+  [Key in keyof OptionalByKey<NonNullable<Model>>]: OptionalByKey<NonNullable<Model>>[Key] extends false ? Key extends keyof Model ? FacadeSelectNode<Model[Key], [...Keys, Key]> : never : never
 }>

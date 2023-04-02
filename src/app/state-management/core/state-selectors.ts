@@ -16,7 +16,7 @@ export function createStateSelectorsInternal<Model extends StateModel<Model>>(pa
     {
       get(_target: any, prop: keyof Model) {
         if(!selectorFn)
-          selectorFn = createSelector(parent, key == null ? obj => obj : obj => obj[key]);
+          selectorFn = createSelector(parent, key == null ? obj => obj : obj => obj?.[key]);
         
         if(prop === stateSelectorProperty)
           return selectorFn;
