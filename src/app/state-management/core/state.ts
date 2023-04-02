@@ -16,7 +16,7 @@ export function State<Model extends StateModel<Model>>(stateId: string, initialD
       state.data$.next(value);
   }
 
-  const applyOperator = (operator: Model | Operator<Model>): Model => isOperator<Model>(operator) ? operator(state.data$.value) : operator;
+  const applyOperator = (operator: Model | Operator<Model>): Model => isOperator<Model>(operator) ? operator(state.data$.value as DeepReadonly<Model>) : operator;
 
   const operatorAction = class {
     static readonly actionId = `[${stateId}] SetState`
