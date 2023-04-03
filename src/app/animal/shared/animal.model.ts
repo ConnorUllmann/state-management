@@ -1,3 +1,5 @@
+import { Entity } from "src/app/state-management/core/entity-state/entity-state";
+
 export interface Animal {
   name: string
   colors: AnimalColor[]
@@ -13,3 +15,5 @@ export enum AnimalColor {
   Black='black',
   White='white',
 }
+
+export const AnimalEntity = Entity<Animal>();

@@ -26,11 +26,8 @@ export class AppComponent {
   searchName$ = new BehaviorSubject<string>('');
   searchedAnimal$ = combineLatest([
     this.searchName$,
-    this.animalFacade.state.map.select$
-  ]).pipe(map(([searchName, map]) => {
-    const id = this.animalFacade.getId({ name: searchName })
-    return map[id] ?? null;
-  }))
+    this.animalFacade.getById
+  ]).pipe(map(([name, getById]) => getById({ name })))
 
   constructor(
     public animalFacade: AnimalFacade,

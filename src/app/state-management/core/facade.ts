@@ -63,21 +63,21 @@ const addActionPropertes = <ActionClasses extends IActionClassByName>(getStore: 
   }
 }
 
-const getSetOperation = (path: string[], value: any) => {
+const getSetOperation = (path: PropertyKey[], value: any) => {
   let operator = value;
   for(let i = path.length-1; i >= 0; i--)
     operator = patch({ [path[i]!]: operator });
   return operator;
 }
 
-const getPatchOperation = (path: string[], value: any) => {
+const getPatchOperation = (path: PropertyKey[], value: any) => {
   let operator: Operator<any> = patch(value);
   for(let i = path.length-1; i >= 0; i--)
     operator = patch({ [path[i]!]: operator });
   return operator;
 }
 
-const getDeleteOperation = (path: string[], keys: any[]) => {
+const getDeleteOperation = (path: PropertyKey[], keys: any[]) => {
   let operator: Operator<any> = patch(keys.reduce((acc, key) => {
     acc[key] = DeleteProperty;
     return acc;
@@ -103,12 +103,14 @@ const dispatchOperation = <Model>(
   return store.dispatch(setAction, operator)
 }
 
+type FacadeProxy<Model> = Partial<Record<keyof Model | typeof facadeSetProperty | typeof facadeResetProperty | typeof facadeSelectProperty | typeof facadePatchProperty | typeof facadeDeleteProperty, any>>
+
 const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
   getStore: () => Store | null,
   initialData: DeepReadonly<Model>,
   operatorAction: IActionClass<{ value: Operator<Model> }>,
   selectors: DeepReadonly<StateSelectorField<Model>>,
-  path: string[] = [],
+  path: PropertyKey[] = [],
 ) => {
     const getSelectorsValue = () => {
       let selectorsValue: any = selectors;
@@ -124,32 +126,26 @@ const getStateSettersAndSelectors = <Model extends StateModel<Model>>(
       return initialDataValue;
     }
 
-    let facadeSet: Record<PropertyKey, any> = {};
-    let facadeReset: Record<PropertyKey, any> = {};
-    let facadeSelect: Record<PropertyKey, any> = {};
-    let facadePatch: Record<PropertyKey, any> = {};
-    let facadeDelete: Record<PropertyKey, any> = {};
-    let fields: Record<PropertyKey, any> = {};
     const node: any = new Proxy(
-      {} as unknown as any,
+      {} as FacadeProxy<Model>,
       {
-        get(_target: any, prop: string) {
+        get(target: FacadeProxy<Model>, prop: keyof Model) {
           switch(prop) {
             case facadeSetProperty:
-              return facadeSet[prop] ??= (value: any) => dispatchOperation(getStore, getSetOperation(path, value), operatorAction)
+              return target[prop] ??= (value: any) => dispatchOperation(getStore, getSetOperation(path, value), operatorAction)
             case facadeResetProperty:
-              return facadeReset[prop] ??= () => node[facadeSetProperty](getInitialData())
+              return target[prop] ??= () => node[facadeSetProperty](getInitialData())
             case facadeSelectProperty:
-              return facadeSelect[prop] ??= behaviorSubjectBySelectorId[((getSelectorsValue() as StateSelectorProperty<Model>)[stateSelectorProperty] as unknown as HasSelectorId)[selectorIdField] as string]
+              return target[prop] ??= behaviorSubjectBySelectorId[((getSelectorsValue() as StateSelectorProperty<Model>)[stateSelectorProperty] as unknown as HasSelectorId)[selectorIdField] as string]
             case facadePatchProperty:
-              return facadePatch[prop] ??= (patch: any) => dispatchOperation(getStore, getPatchOperation(path, patch), operatorAction)
+              return target[prop] ??= (patch: any) => dispatchOperation(getStore, getPatchOperation(path, patch), operatorAction)
             case facadeDeleteProperty:
-              return facadeDelete[prop] ??= (...keys: any[]) => dispatchOperation(getStore, getDeleteOperation(path, keys), operatorAction)
+              return target[prop] ??= (...keys: any[]) => dispatchOperation(getStore, getDeleteOperation(path, keys), operatorAction)
             default:
-              return fields[prop] ??= getStateSettersAndSelectors(getStore, initialData as any, operatorAction, selectors as any, [...path, prop]);
+              return target[prop] ??= getStateSettersAndSelectors(getStore, initialData as any, operatorAction, selectors as any, [...path, prop]);
           }
         }
-      } as ProxyHandler<any>
+      } as ProxyHandler<FacadeProxy<Model>>
     )
     return node;
 }

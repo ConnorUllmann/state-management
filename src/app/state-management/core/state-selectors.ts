@@ -3,30 +3,27 @@ import { StateSelectorField, stateSelectorProperty } from "./models/state-select
 import { StateModel } from "./models/state.model";
 import { createSelector, ISelectorParent, SelectorFn } from "./selector";
 
-export function createStateSelectors<Model extends StateModel<Model>>(parent: BehaviorSubject<Model>): StateSelectorField<Model> {
-  return createStateSelectorsInternal(parent, null);
-}
+type StateSelectorProxy<Model> = Partial<Record<keyof Model, StateSelectorField<Model>>> & { selector: SelectorFn<any> | null }
 
-export function createStateSelectorsInternal<Model extends StateModel<Model>>(parent: ISelectorParent<Model>, key: keyof Model | null): StateSelectorField<Model> {
-  let selectorFn: SelectorFn<any> | null = null;
-  let fields: Partial<Record<keyof Model, StateSelectorField<Model>>> = {};
-
+function createStateSelectorsInternal<Model extends StateModel<Model>>(parent: ISelectorParent<Model>, key: keyof Model | null): StateSelectorField<Model> {
   const obj = new Proxy(
-    {} as unknown as StateSelectorField<Model>,
+    { selector: null } as StateSelectorProxy<Model>,
     {
-      get(_target: any, prop: keyof Model) {
-        if(!selectorFn)
-          selectorFn = createSelector(parent, key == null ? obj => obj : obj => obj?.[key]);
+      get(target: StateSelectorProxy<Model>, prop: keyof Model) {
+        if(!target.selector)
+          target.selector = createSelector(parent, key == null ? o => o : o => o?.[key]);
         
         if(prop === stateSelectorProperty)
-          return selectorFn;
+          return target.selector;
         else {
-          if(!(prop in fields))
-            fields[prop] = createStateSelectorsInternal(selectorFn, prop);
-          return fields[prop];
+          return (target as Partial<Record<keyof Model, StateSelectorField<Model>>>)[prop] ??= createStateSelectorsInternal(target.selector, prop);
         }
       }
-    } as ProxyHandler<StateSelectorField<Model>>
+    } as ProxyHandler<StateSelectorProxy<Model>>
   );
   return obj as StateSelectorField<Model>;
+}
+
+export function createStateSelectors<Model extends StateModel<Model>>(parent: BehaviorSubject<Model>): StateSelectorField<Model> {
+  return createStateSelectorsInternal(parent, null);
 }

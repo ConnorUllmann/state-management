@@ -22,7 +22,7 @@
   <button (click)="animalFacade.fetchAnimals()">Fetch</button>
   
   <ul>
-    <li *ngFor="let animal of animalFacade.getAnimals | async">
+    <li *ngFor="let animal of animalFacade.getList | async">
       {{
         [
           animal.name,

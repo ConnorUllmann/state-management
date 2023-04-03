@@ -30,6 +30,17 @@ const shouldRecalculateSelector = (lastParentSelectorValues: any[] | undefined, 
       || lastParentSelectorValues.some((last, i) => last !== newParentSelectorValues[i]);
 }
 
+const updateSelector = (selectorId: string, selectorArgs: any[], selectorFn: (...args: any[]) => any) => {
+  if(shouldRecalculateSelector(lastArgumentsRunWithBySelectorId[selectorId], selectorArgs)) {
+    const value = selectorFn(...selectorArgs as any);
+    if(!behaviorSubjectBySelectorId[selectorId])
+      behaviorSubjectBySelectorId[selectorId] = new BehaviorSubject(value);
+    else
+      behaviorSubjectBySelectorId[selectorId]!.next(value);
+  }
+  lastArgumentsRunWithBySelectorId[selectorId] = selectorArgs;
+}
+
 let selectorId = 0;
 export const createSelector = <ParentSelectorFns extends readonly ISelectorParent<any>[], U>(
   ...args: [...selectorFns: ParentSelectorFns, fn: (...args: SelectorFnAndStateReturnTypes<ParentSelectorFns>) => U]
@@ -41,17 +52,15 @@ export const createSelector = <ParentSelectorFns extends readonly ISelectorParen
   
   const newSelectorId = (selectorId++).toString()
   Object.defineProperty(fn, selectorIdField, { configurable: false, enumerable: false, writable: false, value: newSelectorId });
+  
   const parentBehaviorSubjects = selectorFns.map(o => 'stateId' in o ? o.data$ : selectorIdField in o ? behaviorSubjectBySelectorId[o[selectorIdField] as any]! : o);
-  combineLatest(parentBehaviorSubjects).subscribe((selectorValues) => {
-    if(shouldRecalculateSelector(lastArgumentsRunWithBySelectorId[newSelectorId], selectorValues)) {
-      const value = fn(...selectorValues as any);
-      if(!behaviorSubjectBySelectorId[newSelectorId])
-        behaviorSubjectBySelectorId[newSelectorId] = new BehaviorSubject(value);
-      else
-        behaviorSubjectBySelectorId[newSelectorId]!.next(value);
-    }
-    lastArgumentsRunWithBySelectorId[newSelectorId] = selectorValues;
-  })
+
+  if(parentBehaviorSubjects.length <= 0) {
+    // if a selector has no parents, just call it and save the value for it
+    updateSelector(newSelectorId, [], fn);
+  } else {
+    combineLatest(parentBehaviorSubjects).subscribe(selectorArgs => updateSelector(newSelectorId, selectorArgs, fn))
+  }
   return fn as any;
 }
 

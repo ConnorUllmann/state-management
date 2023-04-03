@@ -5,8 +5,8 @@ export type IEntityStateModel<Entity extends StateModel<Entity>> = {
   map: Record<string, Entity>
 }
 
-export const getIdField = 'getId' as const;
+export const getIdStringField = 'getIdString' as const;
 export type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = IState<StateModel<IEntityStateModel<Entity>>> & {
-  readonly getId: (entity: Pick<DeepReadonly<Entity>, IdsUnion>) => string
+  readonly getIdString: (entity: Pick<DeepReadonly<Entity>, IdsUnion>) => string
 }
 
