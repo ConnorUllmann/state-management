@@ -36,8 +36,8 @@ export function Entity<Entity extends StateModel<Entity>>() {
     
       return obj as unknown as Readonly<IEntityState<Entity, IdsUnion<Entity, Ids>>>;
     },
-    SelectorClass<Ids extends IdsOf<Entity>>(state: EntityStateResult<Entity, Ids>) {
-      class EntitySelector {
+    SelectorClass<Ids extends IdsOf<Entity>>(state: EntityStateResult<Entity, Ids>, Base: { new(...args: any[]): any }=class{}) {
+      class EntitySelector extends Base {
         static getIdString = createSelector(
           () => (...args: Parameters<typeof state['getIdString']>) => state.getIdString(...args),
         )
