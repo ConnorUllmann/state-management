@@ -7,9 +7,6 @@ import { ISelectorClass } from "../selector";
 import { Store } from "../store";
 import { getIdStringField, IEntityState } from "./entity-state.model";
 
-
-export type IEntityStateClassByName<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = Record<string, Readonly<IEntityState<Entity, IdsUnion>>> & { store?: never }
-
 type ToEntity<StateClass extends Readonly<IEntityState<StateModel<unknown>, never>>> = StateClass extends Readonly<IEntityState<infer Entity, any>> ? DeepReadonly<Entity> : never
 export type ToStateClass<StateClass> = StateClass extends Readonly<IEntityState<infer Entity, any>> ? Entity extends StateModel<Entity> ? StateClass : never : never
 
