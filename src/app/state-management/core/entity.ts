@@ -7,19 +7,19 @@ import { createSelector, ISelectorClass } from "./selector";
 import { State } from "./state";
 import { Store } from "./store";
 
-export type IEntityStateModel<Entity extends StateModel<Entity>> = {
+type IEntityStateModel<Entity extends StateModel<Entity>> = {
   map: Record<string, Entity>
 }
 
-export const getIdStringField = 'getIdString' as const;
-export type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = IState<StateModel<IEntityStateModel<Entity>>> & {
+const getIdStringField = 'getIdString' as const;
+type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = IState<StateModel<IEntityStateModel<Entity>>> & {
   readonly getIdString: (entity: Pick<DeepReadonly<Entity>, IdsUnion>) => string
 }
 
 type IdProperty<T> = { [K in keyof T]: K extends string | number | boolean ? T[K] extends string | number | boolean ? K : never : never }[keyof T];
 
 export type IdsOf<Entity extends StateModel<Entity>> = IdProperty<Entity> | IdProperty<Entity>[]
-export type IdsUnion<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Ids extends any[] ? Ids[number] : Ids;
+type IdsUnion<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Ids extends any[] ? Ids[number] : Ids;
 export type EntityStateResult<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Readonly<IEntityState<Entity, IdsUnion<Entity, Ids>>>
 
 const addEntitiesField = 'addEntities' as const;
@@ -34,7 +34,7 @@ type IEntityFacadeAdditionalProps<Entity> = {
   patchEntity: (entityId: string, patch: DeepReadonly<Patch<Entity>>) => Observable<void>
 }
 
-export type IEntityFacade<
+type IEntityFacade<
   Entity extends StateModel<Entity>,
   Ids extends IdsOf<Entity>,
   ActionClasses extends IActionClassByName,
