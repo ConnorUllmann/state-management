@@ -1,4 +1,4 @@
-import { Entity, EntityStateResult, IdsOf } from "../core/entity-state/entity-state";
+import { Entity, EntityStateResult, IdsOf } from "../core/entity";
 import { IActionClassByName } from "../core/facade";
 import { StateModel } from "../core/models/state.model";
 import { ISelectorClass } from "../core/selector";

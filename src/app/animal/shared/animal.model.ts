@@ -1,4 +1,4 @@
-import { Entity } from "src/app/state-management/core/entity-state/entity-state";
+import { Entity } from "src/app/state-management/core/entity";
 
 export interface Animal {
   name: string

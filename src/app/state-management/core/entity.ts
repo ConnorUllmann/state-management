@@ -1,11 +1,11 @@
 import { Observable } from "rxjs";
-import { DeepReadonly } from "../deep-utils";
-import { Facade, IActionClassByName, IFacade } from "../facade";
-import { IState, StateModel } from "../models/state.model";
-import { DeleteProperty, Patch, patch } from "../operators";
-import { createSelector, ISelectorClass } from "../selector";
-import { State } from "../state";
-import { Store } from "../store";
+import { DeepReadonly } from "./deep-utils";
+import { Facade, IActionClassByName, IFacade } from "./facade";
+import { IState, StateModel } from "./models/state.model";
+import { DeleteProperty, Patch, patch } from "./operators";
+import { createSelector, ISelectorClass } from "./selector";
+import { State } from "./state";
+import { Store } from "./store";
 
 export type IEntityStateModel<Entity extends StateModel<Entity>> = {
   map: Record<string, Entity>
