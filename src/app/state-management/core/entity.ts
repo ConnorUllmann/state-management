@@ -7,12 +7,12 @@ import { createSelector, ISelectorClass } from "./selector";
 import { State } from "./state";
 import { Store } from "./store";
 
-type IEntityStateModel<Entity extends StateModel<Entity>> = {
+type IEntityStateModel<Entity extends StateModel<Entity>> = StateModel<{
   map: Record<string, Entity>
-}
+}>
 
 const getIdStringField = 'getIdString' as const;
-type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = IState<StateModel<IEntityStateModel<Entity>>> & {
+type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = IState<IEntityStateModel<Entity>> & {
   readonly getIdString: (entity: Pick<DeepReadonly<Entity>, IdsUnion>) => string
 }
 
@@ -42,32 +42,22 @@ type IEntityFacade<
   SelectorClasses extends ISelectorClass[]
 > = IFacade<ActionClasses, { state: StateClass }, SelectorClasses> & IEntityFacadeAdditionalProps<Entity>
 
+const getFieldId = (entity: any, entityIdField: PropertyKey): string => {
+  const result = entity[entityIdField];
+  return typeof result === 'string' ? result : result?.toString() ?? '';
+}
+
 export function Entity<Entity extends StateModel<Entity>>() {
   return {
     State<Ids extends IdsOf<Entity>>(stateId: string, entityIdFields: Ids): EntityStateResult<Entity, Ids> {
-      const obj = State(stateId, { map: {} }) as IEntityState<Entity, Ids extends any[] ? Ids[number] : Ids>;
-    
-      const getFieldId = (entity: Entity, entityIdField: IdProperty<Entity>): string => {
-        const result = entity[entityIdField];
-        return typeof result === 'string' ? result : result?.toString() ?? '';
-      }
-    
-      Object.defineProperty(
-        obj,
-        getIdStringField,
-        {
-          configurable: false,
-          enumerable: true,
-          writable: false,
-          value: (entity: Entity): string => {
-            if(Array.isArray(entityIdFields))
-              return entityIdFields.map(entityIdField => getFieldId(entity, entityIdField)).join('|');
-            return getFieldId(entity, entityIdFields as any);
-          }
+      return {
+        ...State<IEntityStateModel<Entity>>(stateId, { map: {} }),
+        [getIdStringField]: (entity: Pick<DeepReadonly<Entity>, IdsUnion<Entity, Ids>>): string => {
+          if(Array.isArray(entityIdFields))
+            return entityIdFields.map(entityIdField => getFieldId(entity, entityIdField)).join('|');
+          return getFieldId(entity, entityIdFields);
         }
-      )
-    
-      return obj as unknown as Readonly<IEntityState<Entity, IdsUnion<Entity, Ids>>>;
+      }
     },
     SelectorClass<Ids extends IdsOf<Entity>>(state: EntityStateResult<Entity, Ids>, Base: { new(...args: any[]): any }=class{}) {
       class EntitySelector extends Base {
