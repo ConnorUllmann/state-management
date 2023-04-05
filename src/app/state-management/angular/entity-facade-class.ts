@@ -1,36 +1,20 @@
-import { Injectable } from "@angular/core";
-import { EntityFacade, IEntityFacade, ToStateClass } from "../core/entity-state/entity-facade";
+import { Entity, EntityStateResult, IdsOf } from "../core/entity-state/entity-state";
 import { IActionClassByName } from "../core/facade";
+import { StateModel } from "../core/models/state.model";
 import { ISelectorClass } from "../core/selector";
-import { Store } from "../core/store";
+import { TransformFacadeToClass } from "./transform-facade-to-class";
 
 export function EntityFacadeClass<
-ActionClasses extends IActionClassByName,
-StateClass,
-SelectorClasses extends ISelectorClass[]
+  Entity extends StateModel<Entity>,
+  Ids extends IdsOf<Entity>,
+  ActionClasses extends IActionClassByName,
+  StateClass extends EntityStateResult<Entity, Ids>,
+  SelectorClasses extends ISelectorClass[]
 >(
+  entity: { Facade: ReturnType<typeof Entity<Entity>>['Facade'] },
   actionClasses: ActionClasses,
-  state: ToStateClass<StateClass>,
+  state: StateClass,
   ...selectorClasses: SelectorClasses
 ) {
-  @Injectable()
-  class EntityFacadeClass {
-    constructor(store: Store) {
-      const facade = EntityFacade(
-        store,
-        actionClasses,
-        state,
-        ...selectorClasses,
-      );
-  
-      for(const key in facade) {
-        Object.defineProperty(
-          this,
-          key,
-          Object.getOwnPropertyDescriptor(facade, key)!
-        )
-      }
-    }
-  }
-  return EntityFacadeClass as unknown as { new(store: Store): IEntityFacade<ActionClasses, typeof state, SelectorClasses> };
+  return TransformFacadeToClass(store => entity.Facade(store, actionClasses, state, ...selectorClasses));
 }

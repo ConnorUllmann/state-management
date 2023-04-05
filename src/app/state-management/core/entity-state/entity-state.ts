@@ -1,13 +1,46 @@
-import { StateModel } from "../models/state.model";
-import { createSelector } from "../selector";
+import { Observable } from "rxjs";
+import { DeepReadonly } from "../deep-utils";
+import { Facade, IActionClassByName, IFacade } from "../facade";
+import { IState, StateModel } from "../models/state.model";
+import { DeleteProperty, Patch, patch } from "../operators";
+import { createSelector, ISelectorClass } from "../selector";
 import { State } from "../state";
-import { getIdStringField, IEntityState } from "./entity-state.model";
+import { Store } from "../store";
+
+export type IEntityStateModel<Entity extends StateModel<Entity>> = {
+  map: Record<string, Entity>
+}
+
+export const getIdStringField = 'getIdString' as const;
+export type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Entity> = IState<StateModel<IEntityStateModel<Entity>>> & {
+  readonly getIdString: (entity: Pick<DeepReadonly<Entity>, IdsUnion>) => string
+}
 
 type IdProperty<T> = { [K in keyof T]: K extends string | number | boolean ? T[K] extends string | number | boolean ? K : never : never }[keyof T];
 
-type IdsOf<Entity extends StateModel<Entity>> = IdProperty<Entity> | IdProperty<Entity>[]
-type IdsUnion<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Ids extends any[] ? Ids[number] : Ids;
-type EntityStateResult<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Readonly<IEntityState<Entity, IdsUnion<Entity, Ids>>>
+export type IdsOf<Entity extends StateModel<Entity>> = IdProperty<Entity> | IdProperty<Entity>[]
+export type IdsUnion<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Ids extends any[] ? Ids[number] : Ids;
+export type EntityStateResult<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Readonly<IEntityState<Entity, IdsUnion<Entity, Ids>>>
+
+const addEntitiesField = 'addEntities' as const;
+const removeEntitiesField = 'removeEntities' as const;
+const removeIdsField = 'removeIds' as const;
+const patchEntityField = 'patchEntity' as const;
+
+type IEntityFacadeAdditionalProps<Entity> = {
+  addEntities: (entities: DeepReadonly<Entity[]>) => Observable<void>
+  removeEntities: (entities: DeepReadonly<Entity[]>) => Observable<void>
+  removeIds: (ids: string[]) => Observable<void>
+  patchEntity: (entityId: string, patch: DeepReadonly<Patch<Entity>>) => Observable<void>
+}
+
+export type IEntityFacade<
+  Entity extends StateModel<Entity>,
+  Ids extends IdsOf<Entity>,
+  ActionClasses extends IActionClassByName,
+  StateClass extends EntityStateResult<Entity, Ids>,
+  SelectorClasses extends ISelectorClass[]
+> = IFacade<ActionClasses, { state: StateClass }, SelectorClasses> & IEntityFacadeAdditionalProps<Entity>
 
 export function Entity<Entity extends StateModel<Entity>>() {
   return {
@@ -64,6 +97,47 @@ export function Entity<Entity extends StateModel<Entity>>() {
         );
       }
       return EntitySelector;
-    }
+    },
+    Facade<
+      Ids extends IdsOf<Entity>,
+      ActionClasses extends IActionClassByName,
+      StateClass extends EntityStateResult<Entity, Ids>,
+      SelectorClasses extends ISelectorClass[]
+    >(
+      store: Store,
+      actionClasses: ActionClasses,
+      state: StateClass,
+      ...selectorClasses: SelectorClasses
+    ): IEntityFacade<Entity, Ids, ActionClasses, StateClass, SelectorClasses> {
+      return {
+        ...Facade(store, actionClasses, { state }, ...selectorClasses),
+        [addEntitiesField]: (entities: DeepReadonly<Entity[]>) => {
+          const patchObj = entities.reduce((acc, entity) => {
+            const id = state[getIdStringField](entity as DeepReadonly<Entity>);
+            acc[id] = entity;
+            return acc;
+          }, {} as Record<string, DeepReadonly<Entity>>);
+          return store.dispatch(state.operatorAction, patch({ map: patch(patchObj) }) as any)
+        },
+        [removeEntitiesField]: (entities: DeepReadonly<Entity[]>) => {
+          const patchObj = entities.reduce((acc, entity) => {
+            const id = state[getIdStringField](entity as DeepReadonly<Entity>);
+            acc[id] = DeleteProperty;
+            return acc;
+          }, {} as Record<string, typeof DeleteProperty>);
+          return store.dispatch(state.operatorAction, patch({ map: patch(patchObj) }) as any)
+        },
+        [removeIdsField]: (ids: string[]) => {
+          const patchObj = ids.reduce((acc, id) => {
+            acc[id] = DeleteProperty;
+            return acc;
+          }, {} as Record<string, typeof DeleteProperty>);
+          return store.dispatch(state.operatorAction, patch({ map: patch(patchObj) }) as any)
+        },
+        [patchEntityField]: (entityId: string, patchObj: DeepReadonly<Patch<Entity>>) => {
+          return store.dispatch(state.operatorAction, patch({ map: patch({ [entityId]: patch(patchObj) }) }) as any)
+        }
+      };
+    },
   }
 }
