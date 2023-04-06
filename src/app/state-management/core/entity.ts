@@ -17,7 +17,6 @@ type IEntityState<Entity extends StateModel<Entity>, IdsUnion extends keyof Enti
 }
 
 type IdProperty<T> = { [K in keyof T]: K extends string | number | boolean ? T[K] extends string | number | boolean ? K : never : never }[keyof T];
-
 export type IdsOf<Entity extends StateModel<Entity>> = IdProperty<Entity> | IdProperty<Entity>[]
 type IdsUnion<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Ids extends any[] ? Ids[number] : Ids;
 export type EntityStateResult<Entity extends StateModel<Entity>, Ids extends IdProperty<Entity> | IdProperty<Entity>[]> = Readonly<IEntityState<Entity, IdsUnion<Entity, Ids>>>
@@ -30,8 +29,8 @@ const patchEntityField = 'patchEntity' as const;
 type IEntityFacadeAdditionalProps<Entity> = {
   addEntities: (entities: DeepReadonly<Entity[]>) => Observable<void>
   removeEntities: (entities: DeepReadonly<Entity[]>) => Observable<void>
-  removeIds: (ids: string[]) => Observable<void>
-  patchEntity: (entityId: string, patch: DeepReadonly<Patch<Entity>>) => Observable<void>
+  removeIds: (idStrings: string[]) => Observable<void>
+  patchEntity: (idStrings: string, patch: DeepReadonly<Patch<Entity>>) => Observable<void>
 }
 
 type IEntityFacade<
@@ -50,13 +49,16 @@ const getFieldId = (entity: any, entityIdField: PropertyKey): string => {
 export function Entity<Entity extends StateModel<Entity>>() {
   return {
     State<Ids extends IdsOf<Entity>>(stateId: string, entityIdFields: Ids): EntityStateResult<Entity, Ids> {
+      const fields = Array.isArray(entityIdFields) ? [...entityIdFields].sort((a, b) => {
+        const aCompare = a.toString().toLocaleLowerCase();
+        const bCompare = b.toString().toLocaleLowerCase();
+        return aCompare < bCompare ? -1 : aCompare > bCompare ? 1 : 0;
+      }) : entityIdFields;
       return {
         ...State<IEntityStateModel<Entity>>(stateId, { map: {} }),
-        [getIdStringField]: (entity: Pick<DeepReadonly<Entity>, IdsUnion<Entity, Ids>>): string => {
-          if(Array.isArray(entityIdFields))
-            return entityIdFields.map(entityIdField => getFieldId(entity, entityIdField)).join('|');
-          return getFieldId(entity, entityIdFields);
-        }
+        [getIdStringField]: (entity: Pick<DeepReadonly<Entity>, IdsUnion<Entity, Ids>>): string => Array.isArray(fields)
+          ? fields.map(entityIdField => getFieldId(entity, entityIdField)).join('|')
+          : getFieldId(entity, fields)
       }
     },
     SelectorClass<Ids extends IdsOf<Entity>>(state: EntityStateResult<Entity, Ids>, Base: { new(...args: any[]): any }=class{}) {
